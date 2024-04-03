@@ -1,14 +1,15 @@
 import "dotenv/config";
 import cors from "cors";
-import express, { Request, Response } from "express";
+import express, { Request, Response, Router } from "express";
 import { Express } from "express";
 import axios from "axios";
 import { StatusCodes } from "http-status-codes";
+import serverless from "serverless-http";
 
-import { initializeApp } from "./utilities/app/initialize.app";
+// Netlify local path -> http://localhost:8888/.netlify/functions/api/todos/tasks/read
 
-// Create an instance of the Express application
 const app: Express = express();
+const router = Router();
 
 const serviceConfig = {
     user: process.env.USER_SERVICE,
@@ -38,14 +39,14 @@ app.use(cors());
 app.use(express.json());
 
 // Define a simple endpoint for checking the health of the server
-app.get("/heartbeat", async (req: Request, res: Response) => {
+router.get("/heartbeat", async (req: Request, res: Response) => {
     // Respond with a JSON object indicating the status
     return res.status(StatusCodes.OK).json({
         status: "ok",
     });
 });
 
-app.use("/", async (req, res) => {
+router.use("/", async (req, res) => {
     const originalURL = req.url;
     const method = req.method;
 
@@ -89,10 +90,6 @@ app.use("/", async (req, res) => {
     }
 });
 
-// Initialize the application
-const startServer = async () => {
-    await initializeApp(app);
-};
+app.use("/", router);
 
-// Start the server
-startServer();
+export const handler = serverless(app);
